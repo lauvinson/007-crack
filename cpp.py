@@ -146,9 +146,9 @@ class Login(object):
         # 减速阈值
         mid = distance * 4 / 5
         # 计算间隔
-        t = 0.15
+        t = 2
         # 初速度
-        v = 1
+        v = 2
         r = [0.9, 0.95, 0.975, 1, 1.025, 1.05, 1.1]
         i = 0
         while current < distance:

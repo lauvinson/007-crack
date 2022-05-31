@@ -22,6 +22,7 @@ from selenium import webdriver
 from PIL import Image
 import os
 
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
@@ -37,16 +38,16 @@ def base64_to_image(base64_str):
 
 
 slideBgJs = "let c = document.createElement('canvas');let ctx = c.getContext('2d');" \
-     "let img = document.getElementById('slideBg'); /*找到图片*/ " \
-     "c.height=img.naturalHeight;c.width=img.naturalWidth;" \
-     "ctx.drawImage(img, 0, 0,img.naturalWidth, img.naturalHeight);" \
-     "let base64String = c.toDataURL();return base64String;"
+            "let img = document.getElementById('slideBg'); /*找到图片*/ " \
+            "c.height=img.naturalHeight;c.width=img.naturalWidth;" \
+            "ctx.drawImage(img, 0, 0,img.naturalWidth, img.naturalHeight);" \
+            "let base64String = c.toDataURL();return base64String;"
 
 slideBlockJs = "let c = document.createElement('canvas');let ctx = c.getContext('2d');" \
-     "let img = document.getElementById('slideBlock'); /*找到图片*/ " \
-     "c.height=img.naturalHeight;c.width=img.naturalWidth;" \
-     "ctx.drawImage(img, 0, 0,img.naturalWidth, img.naturalHeight);" \
-     "let base64String = c.toDataURL();return base64String;"
+               "let img = document.getElementById('slideBlock'); /*找到图片*/ " \
+               "c.height=img.naturalHeight;c.width=img.naturalWidth;" \
+               "ctx.drawImage(img, 0, 0,img.naturalWidth, img.naturalHeight);" \
+               "let base64String = c.toDataURL();return base64String;"
 
 
 class Login(object):
@@ -59,10 +60,17 @@ class Login(object):
     腾讯防水墙
     python + seleniuum + cv2
     """
+
     def __init__(self):
         # 如果是实际应用中，可在此处账号和密码
         self.url = "https://007.qq.com"
-        self.driver = webdriver.Chrome()
+        options = webdriver.ChromeOptions()  # 创建一个配置对象
+        # options.add_argument("--headless")  # 开启无界面模式
+        # options.add_argument("--disable-gpu")  # 禁用gpu
+        # options.add_argument('--window-size=1280x1024')  # 设置浏览器分辨率（窗口大小）
+        # options.add_argument('--start-maximized')  # 最大化运行（全屏窗口）,不设置，取元素会报错
+        # options.add_argument('--disable-infobars')  # 禁用浏览器正在被自动化程序控制的提示
+        self.driver = webdriver.Chrome(options=options)
 
     @staticmethod
     def show(name):
@@ -146,9 +154,9 @@ class Login(object):
         # 减速阈值
         mid = distance * 4 / 5
         # 计算间隔
-        t = 2
+        t = 1
         # 初速度
-        v = 2
+        v = 1
         r = [0.9, 0.95, 0.975, 1, 1.025, 1.05, 1.1]
         i = 0
         while current < distance:
@@ -202,7 +210,7 @@ class Login(object):
         self.wait.until(expected_conditions.presence_of_element_located((By.ID, 'tcaptcha_iframe')))
         driver.switch_to.frame(driver.find_element_by_id('tcaptcha_iframe'))  # switch 到 滑块frame
         bk_block = self.wait.until(
-                expected_conditions.presence_of_element_located((By.XPATH, '//div/img[@id="slideBg"]')))  # 大图
+            expected_conditions.presence_of_element_located((By.XPATH, '//div/img[@id="slideBg"]')))  # 大图
         web_image_width = bk_block.size
         web_image_width = web_image_width['width']
         bk_block_x = bk_block.location['x']
@@ -226,7 +234,7 @@ class Login(object):
         if position is None:
             return
         real_position = position - 119.194
-        real_position = real_position / 1.72
+        real_position = real_position / width_scale
         real_position = real_position - (slide_block_x - bk_block_x)
         track_list = self.get_track(real_position)
 
@@ -236,18 +244,26 @@ class Login(object):
             expected_conditions.presence_of_element_located((By.XPATH, '//div[@class="tc-drag-thumb"]')))
         ActionChains(driver).click_and_hold(on_element=slid_ing).perform()  # 点击鼠标左键，按住不放
         # print('第二步,拖动元素')
-        for track in track_list:
-            ActionChains(driver).move_by_offset(xoffset=track, yoffset=0).perform()  # 鼠标移动到距离当前位置（x,y）
-            # time.sleep(0.002)
-        # ActionChains(driver).move_by_offset(xoffset=-random.randint(0, 1), yoffset=0).perform()   # 微调，根据实际情况微调
+        ii = 0
+        draw = ActionChains(driver, duration=50)
+        for x in track_list:
+            y = random.choice([-2, -1, 0, 1, 2])
+            draw.move_by_offset(xoffset=x, yoffset=y).perform()
+            t = random.choice([0.007, 0.008, 0.009, 0.010, 0.011])
+            if ii < 20:
+                time.sleep(t * 10)
+            else:
+                time.sleep(t)
+            ii += 1
         time.sleep(1)
+        # ActionChains(driver).move_by_offset(xoffset=-random.randint(0, 1), yoffset=0).perform()   # 微调，根据实际情况微调
         # print('第三步,释放鼠标')
-        ActionChains(driver).release(on_element=slid_ing).perform()
+        draw.release(on_element=slid_ing).perform()
         time.sleep(1)
 
 
 if __name__ == '__main__':
     phone = "****"
     login = Login()
-    for i in range (10):
+    for i in range(10):
         login.login_main()
